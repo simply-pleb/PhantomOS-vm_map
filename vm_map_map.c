@@ -13,7 +13,7 @@ static pthread_mutex_t     vm_map_mutex;
 // to allocate 2^20 * 4kb = 4gb
 #define LEN 16 //1024 * 1024
 
-static void vm_map_map_init() 
+void vm_map_map_init() 
 {
     int mapsize = LEN * sizeof(vm_page);
     vm_map_begin = (vm_page*) malloc(mapsize);
@@ -35,7 +35,7 @@ vm_page* vm_page_init(void *v_addr)
 }
 
 
-static inline u_int64_t hash(u_int64_t val) 
+inline u_int64_t hash(u_int64_t val) 
 {
     return val % LEN;
 }
@@ -43,7 +43,7 @@ static inline u_int64_t hash(u_int64_t val)
 
 // updates vm_page value in vm_map_map structure by val->virt_addr
 
-static void set_page(vm_page* val) 
+void set_page(vm_page* val) 
 {
     int page_idx = hash((u_int64_t)val->virt_addr);
     vm_page* p = vm_map_begin + page_idx;
@@ -60,7 +60,7 @@ static void set_page(vm_page* val)
 
 // returns vm_page value from vm_map_map structure by its v_addr
 
-static vm_page get_page(void* v_addr) 
+vm_page get_page(void* v_addr) 
 {
     int page_idx = hash((u_int64_t)(v_addr));   
     if (vm_map_begin[page_idx].virt_addr != v_addr)
@@ -80,7 +80,7 @@ static vm_page get_page(void* v_addr)
 // Used to show progress
 static int vm_map_do_for_percentage = 0;
 
-static void vm_map_do_for_all(vmem_page_func_t func, int lock)
+void vm_map_do_for_all(vmem_page_func_t func, int lock)
 {
     u_int64_t total = vm_map_end - vm_map_begin;
     vm_page *i;
@@ -104,43 +104,4 @@ static void vm_map_do_for_all(vmem_page_func_t func, int lock)
     }
     vm_map_do_for_percentage = 100;
     pthread_mutex_unlock(&vm_map_mutex);
-}
-
-#include <stdio.h>
-#include <assert.h>
-
-int main(){
-    printf("vm_map init...\n");
-    vm_map_map_init();
-
-
-    // setting/getting page
-    printf("page init...\n");
-    vm_page* p = vm_page_init((void*)1);
-    printf("page address %p\n", p);
-    p->some_value = 123;
-    printf("page initialized.\n");
-
-
-    printf("adding page...\n");
-    set_page(p);
-    
-    printf("getting page...\n");
-    vm_page p2 = get_page((void*)1);
-
-    assert(p->some_value == p2.some_value);
-    assert((void*)&p != (void*)&p2);
-
-
-    // getting page that do not exist
-
-    vm_page p3 = get_page((void*)123);
-    assert(p3.exists == 0);
-    assert(p3.virt_addr == 0);
-    assert(p3.phys_addr == 0);
-    // assert(p3.lock == 0);
-
-
-    printf("test complited.\n");
-    
 }

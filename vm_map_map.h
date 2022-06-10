@@ -1,3 +1,4 @@
+#include <sys/types.h>
 #include <pthread.h>
 
 // typedef	unsigned long long  u_int64_t;
@@ -15,15 +16,17 @@ typedef struct vm_page
 
 
 
-static void vm_map_map_init();
+void vm_map_map_init();
 
-static inline u_int64_t hash(u_int64_t val);
+vm_page* vm_page_init(void *v_addr);
 
-static void set_page(vm_page* val);
+u_int64_t hash(u_int64_t val);
 
-static vm_page get_page(void* v_addr);
+void set_page(vm_page* val);
+
+vm_page get_page(void* v_addr);
 
 
 typedef void (*vmem_page_func_t)(vm_page *);
 
-static void vm_map_do_for_all(vmem_page_func_t func, int lock);
+void vm_map_do_for_all(vmem_page_func_t func, int lock);

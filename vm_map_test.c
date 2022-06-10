@@ -13,7 +13,7 @@ int main() {
     printf("page init...\n");
     vm_page* p = vm_page_init((void*)1);
     printf("page address %p\n", p);
-    p->some_value = 123;
+    p->phys_addr = 123;
     printf("page initialized.\n");
 
 
@@ -23,11 +23,12 @@ int main() {
     printf("getting page...\n");
     vm_page p2 = get_page((void*)1);
 
-    assert(p->some_value == p2.some_value);
+
+    assert(p->phys_addr == p2.phys_addr);
     assert((void*)&p != (void*)&p2);
 
 
-    // getting page that do not exist
+    // getting page that does not exist
 
     vm_page p3 = get_page((void*)123);
     assert(p3.exists == 0);

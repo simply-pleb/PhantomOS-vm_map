@@ -10,8 +10,6 @@ typedef struct vm_page
     physaddr_t             phys_addr; 
     unsigned char          exists;
     pthread_mutex_t        lock;
-
-    int                    some_value;
 }vm_page;
 
 

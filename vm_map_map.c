@@ -11,7 +11,7 @@ static vm_page*            vm_map_end;          // a byte after map
 static pthread_mutex_t     vm_map_mutex;
 
 // to allocate 2^20 * 4kb = 4gb
-#define LEN 16 //1024 * 1024
+#define LEN 1024 * 1024
 
 void vm_map_map_init() 
 {
@@ -52,7 +52,6 @@ void set_page(vm_page* val)
     pthread_mutex_lock(&vm_map_mutex);
     pthread_mutex_lock(&p->lock);
     *p = *val;
-    p->phys_addr = page_idx;
     pthread_mutex_unlock(&p->lock);
     pthread_mutex_unlock(&vm_map_mutex);
 }

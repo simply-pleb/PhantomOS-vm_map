@@ -11,7 +11,8 @@ static vm_page*            vm_map_end;          // a byte after map
 static pthread_mutex_t     vm_map_mutex;
 
 // to allocate 2^20 * 4kb = 4gb
-#define LEN 1024 * 1024
+// #define LEN 1048576
+#define LEN 1024
 
 void vm_map_map_init() 
 {

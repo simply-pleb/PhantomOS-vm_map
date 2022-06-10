@@ -30,6 +30,7 @@ vm_page* vm_page_init(void *v_addr)
     vm_page* p = (vm_page*) malloc(sizeof(vm_page));
     memset(p, 0, sizeof(vm_page));
     p->virt_addr = v_addr;
+    p->exists = 1;
     pthread_mutex_init(&p->lock, NULL);
     return p;
 }

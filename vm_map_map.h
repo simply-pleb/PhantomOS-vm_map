@@ -1,20 +1,9 @@
 #include "vm_map.h"
 
-// typedef u_int64_t physaddr_t;
-
-// typedef struct vm_page
-// {
-//     void *                 virt_addr;     	    // where phys_addr is mapped
-//     physaddr_t             phys_addr; 
-//     unsigned char          exists;
-//     hal_mutex_t        lock;
-// }vm_page;
-
-
 // to allocate 2^20 * 4kb = 4gb
 // #define LEN 1048576
-
-#define LEN 1024
+#define MAP_SIZE 1024
+#define MAP_BUF_SIZE 8
 
 void vm_map_map_init();
 

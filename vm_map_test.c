@@ -71,11 +71,11 @@ void phys_addr_count(vm_page *p) {
 
 // change every phys addr to a constant
 
-void update_all_test() {
+void update_all_test(int total) {
     printf("update all test...\n");
     vm_map_map_do_for_all(phys_addr_set, 0);
     vm_map_map_do_for_all(phys_addr_count, 1);
-    assert(count == LEN);
+    assert(count == total);
     printf("update all test is complited.\n\n");
 }
 
@@ -89,9 +89,9 @@ int do_test_vm_map(const char *test_parm)
 
     push_vm_page();
     test2();
-    test3(2000);
+    test3(MAP_SIZE * MAP_BUF_SIZE + 1234);
 
-    update_all_test();
+    update_all_test(MAP_SIZE * MAP_BUF_SIZE);
 
     printf("Tests are complited.\n");
     // printf("Dummy vm map test\n")

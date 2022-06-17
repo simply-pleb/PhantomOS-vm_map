@@ -93,7 +93,7 @@ int do_test_vm_map(const char *test_parm)
 
     update_all_test(MAP_SIZE * MAP_BUF_SIZE);
 
-    printf("Tests are complited.\n");
+    printf("VM_MAP_MAP TESTS are COMPLITED.\n");
     // printf("Dummy vm map test\n")
     return 0;
 }

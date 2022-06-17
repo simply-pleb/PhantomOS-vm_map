@@ -57,6 +57,8 @@ typedef struct vm_page
     void *              virt_addr;     	// where phys_addr is mapped
     physaddr_t          phys_addr;      // our phys mem page, if any
 
+    unsigned char exists                        ONEBIT;
+
     // Can't touch pager_io data
     unsigned char       flag_pager_io_busy      ONEBIT;
 

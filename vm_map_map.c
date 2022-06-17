@@ -5,10 +5,12 @@
 
 #include "vm_map_map.h"
 
-static vm_page**            vm_map_begin;        // array of arrays of pages
+
+static vm_page**            vm_map_begin;        // 2d array of pages
 static vm_page**            vm_map_end;          // a byte after map
-static int*                 vm_map_index;
-static hal_mutex_t         vm_map_mutex;
+
+static int*                 vm_map_index;        // indexes of next page to replace
+static hal_mutex_t          vm_map_mutex;
 
 
 void vm_map_map_init() 
@@ -67,6 +69,8 @@ vm_page* find_page(void* v_addr) {
     }
     return page;
 }
+
+
 void set_page(vm_page* val) 
 {
     vm_page* page = find_page(val->virt_addr);
@@ -88,7 +92,6 @@ void set_page(vm_page* val)
 
 vm_page get_page(void* v_addr) 
 {
-    
     vm_page* page = find_page(v_addr);
     if (page->virt_addr != v_addr)
         return (const struct vm_page){0};
@@ -133,3 +136,6 @@ void vm_map_map_do_for_all(vmem_page_func_t func, int lock)
     vm_map_map_do_for_percentage = 100;
     hal_mutex_unlock(&vm_map_mutex);
 }
+
+
+

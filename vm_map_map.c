@@ -71,18 +71,18 @@ vm_page* find_page(void* v_addr) {
 }
 
 
-void set_page(vm_page* val) 
+void set_page(vm_page* new_page) 
 {
-    vm_page* page = find_page(val->virt_addr);
+    vm_page* page = find_page(new_page->virt_addr);
     
     hal_mutex_lock(&vm_map_mutex);
     if (page->exists) {
         hal_mutex_lock(&page->lock);
     } else {
-        int page_idx = hash((u_int64_t)val->virt_addr);
+        int page_idx = hash((u_int64_t)new_page->virt_addr);
         vm_map_index[page_idx] = (vm_map_index[page_idx] + 1) % MAP_BUF_SIZE;
     }
-    *page = *val;
+    *page = *new_page;
     hal_mutex_unlock(&page->lock);
     hal_mutex_unlock(&vm_map_mutex);
 }

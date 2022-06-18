@@ -10,7 +10,7 @@ void vm_map_map_init();
 
 vm_page* vm_map_page_init(void *v_addr);
 
-void set_page(vm_page* val);
+void set_page(vm_page* new_page);
 
 vm_page get_page(void* v_addr);
 

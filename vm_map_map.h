@@ -6,6 +6,13 @@
 #define MAP_BUF_SIZE 8
 
 
+static vm_page**            vm_map_begin;        // 2d array of pages
+static vm_page**            vm_map_end;          // a byte after map
+
+static int*                 vm_map_index;        // indexes of next page to replace
+static hal_mutex_t          vm_map_mutex;
+
+
 void vm_map_map_init();
 
 vm_page* vm_map_page_init(void *v_addr);

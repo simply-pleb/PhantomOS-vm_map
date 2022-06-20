@@ -5,7 +5,7 @@ One of the core tasks in porting PhantomOS from 32-bit to 64-bit system  is to u
 
 ## Interface
 
-Our goal is to develop a structure for translation of virtual addresses to physical. First lets define its interface.
+Our goal is to develop a structure for keeping a translations of virtual addresses to physical. First lets define its interface.
 
 The functions that we need:
 
@@ -34,4 +34,13 @@ We use the idea of an *inverted page table* to impliment the interface.
 
 To make it more efficient we use *software TLB* just like in PowerPC's page table by pre-allocating fixed number of PTE's per hashed virtual address.
 
+## TODO
+
+- [x] make interface
+- [x] implement functions
+- [x] add tests
+- [ ] add random unit tests
+- [ ] add integration tests
+- [ ] connect Page Table implemetation with ```vm_map.c```
+- [ ] add test for perfomanse measurement
 

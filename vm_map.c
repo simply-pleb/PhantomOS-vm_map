@@ -93,7 +93,7 @@ static int PAGEOUT_DEBUG = 0;
 // We do atomic works with this mutex taken.
 // If something long happens with ne page we
 // set
-static hal_mutex_t vm_map_mutex;
+// static hal_mutex_t vm_map_mutex;
 
 //vm_map_impl   vm_map;
 //spinlock    vm_page_lock;
@@ -133,17 +133,28 @@ static size_t           dirty_q_size;
 // for each copy of system this address can't change - we
 // keep it in a pagefile.
 
-static void *              vm_map_start_of_virtual_address_space;
-static unsigned long       vm_map_vm_page_count = 0;         // how many pages VM has, if 0 = we are not running yet
+// static void *              vm_map_start_of_virtual_address_space;
+// static unsigned long       vm_map_vm_page_count = 0;        // how many pages VM has, if 0 = we are not running yet
 
-static vm_page *           vm_map_map;                       // array of pages
-static vm_page *           vm_map_map_end;                   // a byte after map
+// static vm_page *           vm_map_map;                       // array of pages
+// static vm_page *           vm_map_map_end;                   // a byte after map
 
 static int last_snap_is_done = 0;
 
 
 void                vm_map_wait_for_finish() { while(!last_snap_is_done) hal_sleep_msec(100); }
+// void *              vm_map_get_object_address_space_start() { return vm_map_start_of_virtual_address_space; }
+
+//-------------------------------------------
+
+#include "vm_map_map.h"
+#define NEW_MAP
+
+static void*              vm_map_start_of_virtual_address_space;
+
 void *              vm_map_get_object_address_space_start() { return vm_map_start_of_virtual_address_space; }
+
+
 
 
 //---------------------------------------------------------------------------
@@ -205,6 +216,12 @@ static inline void page_touch_history_arg(vm_page *p, int arg)
 
 static void    page_fault( vm_page *p, int  is_writing );
 
+#ifdef NEW_MAP
+static vm_page addr_to_vm_page(void* v_addr, struct trap_state *ts)
+{
+    return get_page(v_addr);
+}
+#else
 static vm_page *addr_to_vm_page(unsigned long addr, struct trap_state *ts)
 {
     addr -= (addr_t)vm_map_start_of_virtual_address_space;
@@ -223,10 +240,10 @@ static vm_page *addr_to_vm_page(unsigned long addr, struct trap_state *ts)
 
     return vm_map_map + pageno;
 }
-
+#endif
 
 static void
-vm_map_page_fault_handler( void *address, int  write, int ip, struct trap_state *ts )
+vm_map_page_fault_handler( void *v_addr, int  write, int ip, struct trap_state *ts )
 {
     (void) ip;
 
@@ -239,11 +256,19 @@ vm_map_page_fault_handler( void *address, int  write, int ip, struct trap_state 
 	}
 #endif
 
-#if 1
-    vm_page *vmp = addr_to_vm_page((addr_t) address, ts);
+#ifdef NEW_MAP
+    vm_page* vmp = vm_map_page_init(v_addr);
+
+    //    // do i need to give them the real pointer?
+    // hal_mutex_lock(&vmp->lock);
+    page_touch_history_arg(vmp, ip);
+    page_fault( vmp, write );
+    set_page(vmp);
+    // hal_mutex_unlock(&vmp->lock);
+
 #else
     // TODO! Stack growth? Object space growth?
-    long addr = (unsigned int) address;
+    long addr = (unsigned int) v_addr;
 
     addr -= (unsigned int)vm_map_start_of_virtual_address_space;
     /*
@@ -260,13 +285,14 @@ vm_map_page_fault_handler( void *address, int  write, int ip, struct trap_state 
 
     if(FAULT_DEBUG) syslog( 0, "fault 0x%X pgno %d\n", addr, pageno );
 
-#endif
-
     hal_mutex_lock(&vmp->lock);
     page_touch_history_arg(vmp, ip);
     page_fault( vmp, write );
     hal_mutex_unlock(&vmp->lock);
 
+#endif
+
+ 
 }
 
 
@@ -337,16 +363,18 @@ vm_map_page_fault_trap_handler(struct trap_state *ts)
 
 
         {
-            unsigned long addr = fa;
+            // unsigned long addr = fa;
 
-            addr -= (addr_t)vm_map_start_of_virtual_address_space;
 
-            if( addr >= (vm_map_vm_page_count*__MEM_PAGE) )
-            {
-                phantom_check_user_trap( ts );
-                dump_ss(ts);
-                panic("fault address 0x%p is outside of object space, IP 0x%X", fa, ip);
-            }
+
+            // addr -= (addr_t)vm_map_start_of_virtual_address_space;
+
+            // if( addr >= (vm_map_vm_page_count*__MEM_PAGE) )
+            // {
+            //     phantom_check_user_trap( ts );
+            //     dump_ss(ts);
+            //     panic("fault address 0x%p is outside of object space, IP 0x%X", fa, ip);
+            // }
         }
 
 
@@ -401,6 +429,9 @@ vm_map_init(unsigned long page_count)
     //page_clear_engine_init();
     SHOW_FLOW0( 1, "Started");
 
+#ifdef NEW_MAP
+    vm_map_map_init();
+#else
     vm_map_vm_page_count = page_count;
 
     int mapsize = vm_map_vm_page_count*sizeof(vm_page);
@@ -432,6 +463,8 @@ vm_map_init(unsigned long page_count)
     for( np = 0; np < page_count; np++ )
         vm_page_init( &vm_map_map[np], ((char *)vm_map_start_of_virtual_address_space) + (__MEM_PAGE * np) );
 
+#endif
+
 
     disk_page_no_t snap_start = 0;
 
@@ -462,6 +495,8 @@ vm_map_init(unsigned long page_count)
 
         pagelist_seek(&loader);
 
+#ifdef NEW_MAP
+#else
         for( np = 0; np < page_count; np++ )
         {
             if( !pagelist_read_seq(&loader, &vm_map_map[np].prev_page) )
@@ -474,6 +509,7 @@ vm_map_init(unsigned long page_count)
             // Zero page means we have no data fr this block and it must be zero
             vm_map_map[np].flag_have_prev = (vm_map_map[np].prev_page != 0);
         }
+#endif
 
         pagelist_finish( &loader );
     }
@@ -523,7 +559,8 @@ void vm_map_finish(void)
 }
 
 
-
+#ifdef NEW_MAP
+#else
 void
 vm_page_init( vm_page *me, void *my_vaddr)
 {
@@ -534,7 +571,7 @@ vm_page_init( vm_page *me, void *my_vaddr)
     page_touch_history(me);
     pager_io_request_init( &me->pager_io );
 }
-
+#endif
 
 
 
@@ -1212,7 +1249,21 @@ page_fault( vm_page *p, int  is_writing )
 #endif
 }
 
+#ifdef NEW_MAP
 
+static void
+vm_map_for_all( vmem_page_func_t func )
+{
+    vm_map_map_do_for_all(func, 1);
+}
+
+static void
+vm_map_for_all_locked( vmem_page_func_t func )
+{
+    vm_map_map_do_for_all(func, 0);
+}
+
+#else
 // Used to show progress
 int vm_map_do_for_percentage = 0;
 
@@ -1235,6 +1286,7 @@ vm_map_do_for_all( vmem_page_func_t func, int lock )
     vm_map_do_for_percentage = 100;
 }
 
+
 static void
 vm_map_for_all( vmem_page_func_t func )
 {
@@ -1247,6 +1299,7 @@ vm_map_for_all_locked( vmem_page_func_t func )
     vm_map_do_for_all(func, 0);
 }
 
+#endif
 
 
 //---------------------------------------------------------------------------
@@ -1922,6 +1975,8 @@ static void vm_verify_snap(disk_page_no_t head)
 
     pagelist_seek(&loader);
 
+#ifdef NEW_MAP
+#else
     for(np = 0; np < vm_map_map_end - vm_map_map; np++)
     {
         size_t page_offset = np * PAGE_SIZE;
@@ -1967,6 +2022,7 @@ static void vm_verify_snap(disk_page_no_t head)
 #endif
         }
     }
+#endif
 
     pagelist_finish( &loader );
 #if !USE_SYNC_IO
@@ -2023,10 +2079,7 @@ void unwire_page( vm_page *p )
 }
 
 
-
-//! Make page wired (fixed in phys mem, allways present)
-// It is guaranteed that after return and up to the call
-// to unwire_page_for_addr physical addr will be the same
+#ifdef NEW_MAP
 void wire_page_for_addr( void *addr, size_t count )
 {
     void *pp = (void *)PREV_PAGE_ALIGN((addr_t)addr);
@@ -2034,7 +2087,9 @@ void wire_page_for_addr( void *addr, size_t count )
     c += addr-pp;
 
     do{
-        wire_page( addr_to_vm_page((addr_t) pp, 0) );
+        vm_page page = get_page(pp);
+        wire_page(&page);
+        set_page(&page);
         c -= PAGE_SIZE;
         pp += PAGE_SIZE;
     } while( c > 0 );
@@ -2047,12 +2102,44 @@ void unwire_page_for_addr( void *addr, size_t count )
     c += addr-pp;
 
     do{
-        unwire_page( addr_to_vm_page((addr_t) pp, 0) );
+        vm_page page = get_page(pp);
+        unwire_page(&page);
+        set_page(&page);
+        c -= PAGE_SIZE;
+        pp += PAGE_SIZE;
+    } while( c > 0 );
+}
+#else
+//! Make page wired (fixed in phys mem, allways present)
+// It is guaranteed that after return and up to the call
+// to unwire_page_for_addr physical addr will be the same
+void wire_page_for_addr( void *addr, size_t count )
+{
+    void *pp = (void *)PREV_PAGE_ALIGN((addr_t)addr);
+    ssize_t c = count;
+    c += addr-pp;
+
+    do{
+        wire_page(addr_to_vm_page((addr_t) pp, 0) );
         c -= PAGE_SIZE;
         pp += PAGE_SIZE;
     } while( c > 0 );
 }
 
+void unwire_page_for_addr( void *addr, size_t count )
+{
+    void *pp = (void *)PREV_PAGE_ALIGN((addr_t)addr);
+    ssize_t c = count;
+    c += addr-pp;
+
+    do{
+        unwire_page(addr_to_vm_page((addr_t) pp, 0) );
+        c -= PAGE_SIZE;
+        pp += PAGE_SIZE;
+    } while( c > 0 );
+}
+
+#endif
 
 // TODO must unmap and free physmem, and resulting page must not go
 // to snap at all (must have 0 in pagelist = no pagein on snap load)
@@ -2175,10 +2262,15 @@ static rgba_t calc_persistent_pixel_color( int elem, int units_per_pixel );
  * \param[in] r Rectangle to paint inside
  * 
 **/
+#ifdef NEW_MAP
+#else
+
 void paint_persistent_memory_map(window_handle_t w, rect_t *r )
 {
+    #ifdef NEW_MAP
+    #else
     if(!vm_map_vm_page_count) return;
-
+    #endif
     int pixels = r->xsize * r->ysize;
     int units_per_pixel =  1 + ((vm_map_vm_page_count-1) / pixels);
 
@@ -2234,4 +2326,6 @@ static rgba_t calc_persistent_pixel_color( int elem, int units_per_pixel )
     }
 }
 
+
+#endif
 

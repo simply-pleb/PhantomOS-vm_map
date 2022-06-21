@@ -13,7 +13,7 @@ The functions that we need:
 * update a mapping
 * apply function to all mappings (for snapshots)
 
-The interface that we choosed is defined in the ```vm_map_map.h```:
+The interface that we choose is defined in the ```vm_map_map.h```:
 
 ```C
 void vm_map_map_init();
@@ -26,7 +26,7 @@ vm_page get_page(void* v_addr);
 
 void vm_map_map_do_for_all(vmem_page_func_t func, int lock);
 ```
-For possibilities of parallel operations on our structure we decided to make ```get_page``` function to return the copy of a page not a pointer to an actual page. That way we can persist to any changes go through our functions.
+For possibility of parallel operations on our structure we decided that ```get_page``` function will return the copy of a page not a pointer to an actual page. That way we can persist to any changes go through our interface.
 
 ## Implemetation
 
@@ -36,11 +36,17 @@ To make it more efficient we use *software TLB* just like in PowerPC's page tabl
 
 ## TODO
 
-- [x] make interface
-- [x] implement functions
-- [x] add tests
-- [ ] add random unit tests
-- [ ] add integration tests
+- [x] interface
+- [x] basic implemetation of functions
+- [x] unit tests
 - [ ] connect Page Table implemetation with ```vm_map.c```
-- [ ] add test for perfomanse measurement
+- [ ] integration tests
+- [ ] tests for perfomanse measurement
+
+## Possible updates to increase perfomance
+
+- change hash function
+- use different algorithm to remove old mappings
+- use spinlock vs mutex
+
 

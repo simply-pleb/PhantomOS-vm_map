@@ -32,14 +32,14 @@ For possibility of parallel operations on our structure we decided that ```get_p
 
 We use the idea of an *inverted page table* to impliment the interface. 
 
-To make it more efficient we use *software TLB* just like in PowerPC's page table by pre-allocating fixed number of PTE's per hashed virtual address.
+To make it more efficient we use *software TLB* by pre-allocating fixed number of PTE's per hashed virtual address. This technique is also used in the PowerPC's page table.
 
 ## TODO
 
 - [x] interface
-- [x] basic implemetation of functions
+- [x] basic implemetation
 - [x] unit tests
-- [ ] connect Page Table implemetation with ```vm_map.c```
+- [ ] connect the implemetation with ```vm_map.c```
 - [ ] integration tests
 - [ ] tests for perfomanse measurement
 

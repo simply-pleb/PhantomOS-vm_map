@@ -4,7 +4,7 @@
 
 Ahmadsho Akdodshoev
 
-[Link to github repository](https://github.com/simply-pleb/PhantomOS-vm_map)
+_[Link to github repository](https://github.com/simply-pleb/PhantomOS-vm_map)_ (https://github.com/simply-pleb/PhantomOS-vm_map)
 
 ## The issue with multilevel paging in the current Phantom OS port
 

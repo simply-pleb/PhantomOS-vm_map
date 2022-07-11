@@ -6,7 +6,7 @@
 #include "vm_map_map.h"
 
 
-
+// initialize the data structure
 void vm_map_map_init() 
 {
     int mapsize = MAP_SIZE * sizeof(vm_page*);
@@ -18,15 +18,22 @@ void vm_map_map_init()
 
     // initialize arrays
     int bufsize = MAP_BUF_SIZE * sizeof(vm_page);
-    vm_page** i;
-    for (i = vm_map_begin; i < vm_map_end; i++)
+    // vm_page** i;
+    // for (i = vm_map_begin; i < vm_map_end; i++)
+    // {
+    //     *i = (vm_page*) malloc(bufsize);
+    //     memset(*i, 0, bufsize);
+    // }
+    vm_page** ar = vm_map_begin;
+    for (size_t i = 0; i < MAP_SIZE; i++)
     {
-        *i = (vm_page*) malloc(bufsize);
-        memset(*i, 0, bufsize);
+        ar[i] = (vm_page*) malloc(bufsize);
+        memset(ar[i], 0, bufsize);
     }
     hal_mutex_init(&vm_map_mutex, "VM Map");
 }
 
+// create a vm_page with a specified virtual address
 vm_page* vm_map_page_init(void *v_addr)
 {
     vm_page* p = (vm_page*) malloc(sizeof(vm_page));
@@ -38,7 +45,7 @@ vm_page* vm_map_page_init(void *v_addr)
     return p;
 }
 
-
+// returns a hash
 inline u_int64_t hash(u_int64_t val) 
 {
     return val % MAP_SIZE;
@@ -52,30 +59,47 @@ vm_page* find_page(void* v_addr) {
     // printf("address: %d\n", page_idx);
 
     vm_page* buf = vm_map_begin[page_idx];
-    vm_page* page = buf + vm_map_index[page_idx];
-    vm_page* i;
-    for (i = buf; i < buf + MAP_BUF_SIZE; i++) {
-        if (i->exists && i->virt_addr == v_addr)
+    // vm_page* page = buf + vm_map_index[page_idx];
+    // vm_page* i;
+    // iterate over the array of buf
+    // for (i = buf; i < buf + MAP_BUF_SIZE; i++) {
+    //     if (i->exists && i->virt_addr == v_addr)
+    //     {
+    //         page = i;
+    //         break;
+    //     }
+    // }
+    int i;
+    for (i = 0; i < MAP_BUF_SIZE; i++) {
+        if (buf[i].exists && buf[i].virt_addr == v_addr)
         {
-            page = i;
-            break;
+            return &buf[i];
         }
     }
-    return page;
+    // if the page is not found, return the index of the next page to be replace on this hash value
+    return buf + vm_map_index[page_idx];
 }
 
 
+// load a new vm_page into vm_map
+// REMARK: page gets replaced, but the state is not saved.
 void set_page(vm_page* new_page) 
 {
-    vm_page* page = find_page(new_page->virt_addr);
+    void* new_page_vaddr = new_page->virt_addr;
+    vm_page* page = find_page(new_page_vaddr);
     
     hal_mutex_lock(&vm_map_mutex);
     if (page->exists) {
         hal_mutex_lock(&page->lock);
-    } else {
-        int page_idx = hash((u_int64_t)new_page->virt_addr);
+    } 
+    else {
+        int page_idx = hash((u_int64_t)new_page_vaddr);
         vm_map_index[page_idx] = (vm_map_index[page_idx] + 1) % MAP_BUF_SIZE;
     }
+
+    // TODO: add saving the state of the old page here.
+    // TODO: somehow perform a pageout
+
     *page = *new_page;
     hal_mutex_unlock(&page->lock);
     hal_mutex_unlock(&vm_map_mutex);
@@ -83,7 +107,6 @@ void set_page(vm_page* new_page)
 
 
 // returns vm_page value from vm_map_map structure by its v_addr
-
 vm_page get_page(void* v_addr) 
 {
     // if map mutex not locked?
@@ -131,6 +154,5 @@ void vm_map_map_do_for_all(vmem_page_func_t func, int lock)
     vm_map_map_do_for_percentage = 100;
     hal_mutex_unlock(&vm_map_mutex);
 }
-
 
 

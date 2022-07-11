@@ -79,6 +79,15 @@ void update_all_test(int total) {
     printf("update all test is complited.\n\n");
 }
 
+// int test_big_1()
+// {
+//     int i;
+//     for(i=0; i<4*MAP_SIZE; i++){
+//         vm_page* vmp = vm_map_page_init(i%MAP_SIZE);
+//         set_page(vmp);
+//         free(vmp);
+//     }
+// }
 
 int do_test_vm_map(const char *test_parm)
 {

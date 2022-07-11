@@ -259,6 +259,8 @@ vm_map_page_fault_handler( void *v_addr, int  write, int ip, struct trap_state *
 #ifdef NEW_MAP
     vm_page* vmp = vm_map_page_init(v_addr);
 
+    // TODO: somehow perform a pageout
+
     //    // do i need to give them the real pointer?
     // hal_mutex_lock(&vmp->lock);
     page_touch_history_arg(vmp, ip);
